@@ -101,6 +101,6 @@ const sqlIsert = "INSERT INTO onlyfansdb (name,year,cvv,month,number, email,stre
 
 // app.use(router);
 
-app.listen(APP_PORT, () => {
-   console.log(`server is runing at  ${APP_PORT}`)
-})
+// app.listen(APP_PORT, () => {
+//    console.log(`server is runing at  ${APP_PORT}`)
+// })
