@@ -2,7 +2,7 @@ const httpError = require('../errorHttp')
 const Place = require('./placeModel')
 const User = require('../user/usermodel')
 const  mongoose  = require('mongoose')
-
+const fs = require('fs')
 
 
 
@@ -44,7 +44,7 @@ const getPlaceByUserId = async (req, res, next)=>{
     }
 
     if (!useWithPlace || useWithPlace.places.length === 0){
-        const error = new httpError('this user place is invalid!', 404)
+        const error = new httpError('this user place is emmpty,create a place!', 404)
         return next(error)
     }
 res.json({places : useWithPlace.places.map(place => place.toObject({getters:true}))})
@@ -75,6 +75,16 @@ const deletePlace = async (req,res,next) =>{
         const error = new httpError('cannot found a place for this user ', 500)
         return next(error)
     }
+
+
+    if (place.creator.id !== req.userData.userId){
+        const error = new httpError('you are not allowed to delete this place', 401)
+        return next(error)
+    }
+    
+    const imageDelete = place.image
+
+
     try {
         const sess = await mongoose.startSession();
         sess.startTransaction();
@@ -88,10 +98,14 @@ const deletePlace = async (req,res,next) =>{
         return next(error)
     }
 
+    fs.unlink(imageDelete,  err=>{
+        console.log(err)
+    })
+
     res.status(200).json({message : 'place deleted!'})
 }
 
-
+   
 
 
 
@@ -107,20 +121,25 @@ const createPlaces = async (req, res, next) =>{
             "creating place failed", 500
         )
             return next(error)
-    }
+    } 
        
-    if (!user){
-            const error =new httpError(
-                "could not find user for the provided", 500
-            )
-             return next(error)
-       }
+    // if (!user){
+    //         const error =new httpError(
+    //             "could not find user for the provided", 500
+    //         )
+    //          return next(error)
+    //    }
    
+
     const createAplace = new  Place({
         title, 
         description, 
+        image : req.file.path ,
         creator
     })
+
+
+
 
     try {
         const sess =await mongoose.startSession();
@@ -139,11 +158,51 @@ const createPlaces = async (req, res, next) =>{
     }
 
 
-    res.json({place : createAplace})
+
+
+ return   res.json({place : createAplace.toObject({getters : true})})
+    
 }
 
 
 
+
+const updateplaces = async (req,res,next)=>{
+    const {title,description} = req.body
+    const placeid = req.params.pid
+
+    let place
+
+    try {
+        place = await Place.findById(placeid)    
+    } catch (err) {
+        const error = new httpError('something went wrong, place cannot be updated', 500)
+        return next(error)
+
+    }
+
+    if (place.creator.toString() !== req.userData.userId){
+        const error = new httpError('you are not allowed to edit this place', 401)
+        return next(error)
+    }
+
+    place.title = title, 
+    place.description = description 
+
+    try {
+       await place.save()
+    } catch (err) {
+        const error = new httpError('something went wrong, place cannot be updated', 500)
+        return next(error)
+    }
+    
+
+     res.status(201).json({place : place.toObject({getters : true})})
+}
+
+
+
+exports.updateplaces = updateplaces
 
 exports.createPlaces = createPlaces
 exports.getPlaceByUserId = getPlaceByUserId
@@ -163,33 +222,3 @@ exports.getPlaceById = getPlaceById
 
 
 
-
-// const updateplaces = async (req,res,next)=>{
-//     const {title,desciption} = req.body
-//     const placeid = req.params.pid
-
-//     let place
-
-//     try {
-//         place = await place.findById(placeid)    
-//     } catch (err) {
-//         const error = new httpError('something went wrong, place cannot be updated', 500)
-//         return next(error)
-
-//     }
-
-//     place.title =title,
-//     place.desciption = desciption
-
-//     try {
-//         place.save()
-//     } catch (err) {
-//         const error = new httpError('something went wrong, place cannot be updated', 500)
-//         return next(error)
-//     }
-    
-
-//      res.status(201).json({place : place.toObject({getters : true})})
-// }
-
-// exports.updateplaces = updateplaces

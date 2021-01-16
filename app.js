@@ -1,20 +1,38 @@
+const fs = require('fs')
+const path = require('path')
+
+
 const express = require('express')
 const app = express()
 const bodyParser = require('body-parser')
-const port = 4000
+const port = 5000
 const HttpError = require('./mernSample/errorHttp')
 const mongoose  = require('mongoose')
 
 const placeRouter = require('./mernSample/placeRoute')
 const user = require('./mernSample/userRoute')
+const cors = require('cors')
 
 
+// app.use((req,res,next)=>{
+//     res.setHeader("Access-Control-Allow-Origin", '*')
+//     res.setHeader("Access-Control-Allow-Headers",
+//      'Origin, X-Requested-With, Content-Type, Accept, Authorization')
+//      res.setHeader("Access-Control-Allow-Headers", 'GET, POST, PATCH, DELETE')
+    
+//     next();
+//     })
+    
 
+    app.use(bodyParser.json())
+    app.use(cors()) 
+app.use('/uploads/images', express.static(path.join("uploads", "images")))
 
-app.use(bodyParser.json())
 
 app.use('/api/places', placeRouter)
-app.use('/api/users', user)
+app.use('/api/users', user) 
+
+
 
 app.use((req,res,next)=>{
     const error =  new HttpError('route cannot be found', 404)
@@ -22,6 +40,12 @@ app.use((req,res,next)=>{
 })
 
 app.use((error, req, res, next)=>{
+    if (req.file){
+        fs.unlink(req.file.path,  err=>{
+            console.log(err)
+        })
+    }
+
 if (res.headerSent){
     return next(error)
 }
@@ -43,29 +67,3 @@ mongoose
 .catch((err)=>{
     console.log(err)
 })
-
-
-// sess = await mongoose.startSession();
-    // sess.startTransaction();
-    // await createdPlace.save({session : sess});
-    // user.places.push(createdPlace);
-    // await user.save({session : sess});
-    // await sess.commitTransaction();
-
-    // let user
-
-// try {
-//     user = await User.findById(creator)
-    
-// } catch (err) {
-//     const error = new httpError('user id cannot be found', 500)
-//     return next(error)
-// }
-
-// if (!user){
-//     const error = new httpError('user  cannot be found', 500)
-//     return next(error)
-// }
-
-// console.log(user)
-

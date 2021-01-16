@@ -1,6 +1,8 @@
 const httpError = require("../errorHttp")
-
+const bcrypt = require('bcryptjs')
 const User = require('./usermodel')
+const jwt = require('jsonwebtoken')
+
 
 
 
@@ -25,6 +27,31 @@ const getUserlogin = async (req,res,next) =>{
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const login = async (req,res,next) =>{
     const { email, password} = req.body
     
@@ -37,14 +64,64 @@ const login = async (req,res,next) =>{
         return next(error)
     }
 
-    if (!existingUser || existingUser.password !== password){
+    if (!existingUser ){
         const error = new httpError('wrong credentails', 401)
         return next(error)
     }
+
+    let isValidPassword = false
+
+    try {
+        isValidPassword = await bcrypt.compare(password, existingUser.password)
+    }catch (err) {
+        const error = new httpError('wrong credentails', 500)
+        return next(error)
+    }
+
+    if (!isValidPassword){
+        const error = new httpError('wrong credentails', 401)
+        return next(error)
+    }
+
+    let token
+
+    try{
+        token =  jwt.sign(
+            {userId : existingUser.id, email : existingUser.email},
+            ('unshaare_token'), 
+            {expiresIn:"1h"})
+    } catch (err) {
+        const error =new httpError(
+            "cannot sign up user", 500
+        )
+     return next(error)
+    }
         
-        res.json({message: 'logged in!'})
+        res.json({message: 'logged in!' ,
+         userId : existingUser.id, email : existingUser.email, token: token})
     
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -67,10 +144,20 @@ const signUp = async (req, res, next) =>{
         return next(error)
     }
 
+    let hashPassword
+    try {
+        hashPassword = await bcrypt.hash(password, 12)
+
+    } catch (err) {
+        const error = new httpError('cannot sign up, something went wrong', 500)
+        return next(error)
+    }
+ 
     const createUser = new User({
         name,
         email,
-        password,
+        password : hashPassword,
+        image : req.file.path ,
         places : []
     })
 
@@ -80,13 +167,26 @@ const signUp = async (req, res, next) =>{
         const error =new httpError(
             "cannot sign up user", 500
         )
-
-        return next(error)
+     return next(error)
     }
 
-    res.json({user : createUser})
+    let token
+
+    try{
+        token =  jwt.sign(
+            {userId : createUser.id, email : createUser.email},
+            ('unshaare_token'), 
+            {expiresIn:"1h"})
+    } catch (err) {
+        const error =new httpError(
+            "cannot sign up user", 500
+        )
+     return next(error)
+    }
+
+    res.json({userId :  createUser.id, email : createUser.email, token : token})
 }
 
 exports.signUp = signUp
 exports.getUserlogin = getUserlogin
-exports.login = login
+exports.login = login  
