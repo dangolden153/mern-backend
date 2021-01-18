@@ -5,7 +5,7 @@ const path = require('path')
 const express = require('express')
 const app = express()
 const bodyParser = require('body-parser')
-const port = 5000
+const port = process.env.PORT || 5000
 const HttpError = require('./mernSample/errorHttp')
 const mongoose  = require('mongoose')
 
